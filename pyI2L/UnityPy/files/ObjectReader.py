@@ -4,9 +4,6 @@ from . import SerializedFile
 from .. import classes
 from ..classes.Object import NodeHelper
 from ..streams import EndianBinaryReader, EndianBinaryWriter
-from ..helpers import TypeTreeHelper
-from ..helpers.Tpk import get_typetree_nodes
-from ..exceptions import TypeTreeError
 
 
 class ObjectReader:
@@ -184,51 +181,6 @@ class ObjectReader:
 
     def __repr__(self):
         return "<%s %s>" % (self.__class__.__name__, self.type.name)
-
-    ###################################################
-    #
-    #           Typetree Stuff
-    #
-    ###################################################
-
-    def dump_typetree(self, nodes: list = None) -> str:
-        self.reset()
-        sb = []
-        nodes = self.get_typetree(nodes)
-        TypeTreeHelper.read_typetree_str(sb, nodes, self)
-        return "".join(sb)
-
-    def dump_typetree_structure(self) -> str:
-        return TypeTreeHelper.dump_typetree(self.get_typetree_nodes())
-
-    def get_typetree_nodes(self, nodes: list = None) -> list:
-        if nodes:
-            return nodes
-
-        if self.serialized_type:
-            nodes = self.serialized_type.nodes
-        if not nodes:
-            nodes = get_typetree_nodes(self.class_id, self.version)
-        if not nodes:
-            raise TypeTreeError("There are no TypeTree nodes for this object.")
-        return nodes
-
-    def read_typetree(self, nodes: list = None, wrap: bool = False) -> dict:
-        self.reset()
-        nodes = self.get_typetree_nodes(nodes)
-        res = TypeTreeHelper.read_typetree(nodes, self)
-        return NodeHelper(res, self.assets_file) if wrap else res
-
-    def save_typetree(
-        self, tree: dict, nodes: list = None, writer: EndianBinaryWriter = None
-    ):
-        nodes = self.get_typetree_nodes(nodes)
-        if not writer:
-            writer = EndianBinaryWriter(endian=self.reader.endian)
-        writer = TypeTreeHelper.write_typetree(tree, nodes, writer)
-        data = writer.bytes
-        self.set_raw_data(data)
-        return data
 
     def get_raw_data(self) -> bytes:
         pos = self.Position

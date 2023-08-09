@@ -1,10 +1,8 @@
 from .PPtr import PPtr
 from ..enums import BuildTarget
-from ..helpers import TypeTreeHelper
 from ..streams import EndianBinaryWriter
 from ..files import ObjectReader
 import types
-from ..exceptions import TypeTreeError as TypeTreeError
 
 
 class Object(object):

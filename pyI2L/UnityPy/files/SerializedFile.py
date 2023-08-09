@@ -1,14 +1,11 @@
 ﻿from ntpath import basename
 import re
 
-from . import File, ObjectReader, BundleFile
+from . import File, ObjectReader
 from ..enums import BuildTarget, ClassIDType, CommonString
 from ..streams import EndianBinaryReader, EndianBinaryWriter
-from ..helpers.TypeTreeHelper import TypeTreeNode
 
 from struct import Struct
-
-from .. import config
 
 
 class SerializedFileHeader:
@@ -279,9 +276,6 @@ class SerializedFile(File.File):
                 SerializedType(reader, self, True) for _ in range(ref_type_count)
             ]
 
-        if config.SERIALIZED_FILE_PARSE_TYPETREE is False:
-            self._enable_type_tree = False
-
         if header.version >= 5:
             self.userInformation = reader.read_string_to_null()
 
@@ -321,117 +315,12 @@ class SerializedFile(File.File):
         if not string_version or string_version == "0.0.0":
             # weird case, but apparently can happen?
             # check "cant read Texture2D by 2020.3.13 f1 AssetBundle #77" for details
-            if isinstance(self.parent, BundleFile.BundleFile):
-                string_version = self.parent.version_engine
             if not string_version or string_version == "0.0.0":
-                string_version = config.get_fallback_version()
+                string_version = "2.5.0f5"
         build_type = re.findall(r"([^\d.])", string_version)
         self.build_type = BuildType(build_type[0] if build_type else "")
         version_split = re.split(r"\D", string_version)
         self.version = tuple(int(x) for x in version_split)
-
-    def read_type_tree(self):
-        type_tree = []
-        level_stack = [[0, 1]]
-        while level_stack:
-            level, count = level_stack[-1]
-            if count == 1:
-                level_stack.pop()
-            else:
-                level_stack[-1][1] -= 1
-
-            type_tree_node = TypeTreeNode(
-                m_Level=level,
-                m_Type=self.reader.read_string_to_null(),
-                m_Name=self.reader.read_string_to_null(),
-                m_ByteSize=self.reader.read_int(),
-            )
-
-            type_tree.append(type_tree_node)
-            if self.header.version == 2:
-                type_tree_node.m_VariableCount = self.reader.read_int()
-
-            if self.header.version != 3:
-                type_tree_node.m_Index = self.reader.read_int()
-
-            type_tree_node.m_TypeFlags = self.reader.read_int()
-            type_tree_node.m_Version = self.reader.read_int()
-            if self.header.version != 3:
-                type_tree_node.m_MetaFlag = self.reader.read_int()
-
-            children_count = self.reader.read_int()
-            if children_count:
-                level_stack.append([level + 1, children_count])
-        return type_tree
-
-    def read_type_tree_blob(self):
-        reader = self.reader
-        number_of_nodes = self.reader.read_int()
-        string_buffer_size = self.reader.read_int()
-
-        type = f"{reader.endian}hBBIIiii"
-        keys = [
-            "m_Version",
-            "m_Level",
-            "m_TypeFlags",
-            "m_TypeStrOffset",
-            "m_NameStrOffset",
-            "m_ByteSize",
-            "m_Index",
-            "m_MetaFlag",
-        ]
-        if self.header.version >= 19:
-            type += "Q"
-            keys.append("m_RefTypeHash")
-
-        node_struct = Struct(type)
-        struct_data = reader.read(node_struct.size * number_of_nodes)
-        string_buffer_reader = EndianBinaryReader(
-            reader.read(string_buffer_size), reader.endian
-        )
-
-        if not config.SERIALIZED_FILE_PARSE_TYPETREE:
-            return [], string_buffer_reader.bytes
-
-        type_tree = [
-            TypeTreeNode(
-                **dict(zip(keys, raw_node)),
-                m_Type=read_string(string_buffer_reader, raw_node[3]),
-                m_Name=read_string(string_buffer_reader, raw_node[4]),
-            )
-            for i, raw_node in enumerate(node_struct.iter_unpack(struct_data))
-        ]
-
-        return type_tree, string_buffer_reader.bytes
-
-    def get_writeable_cab(self, name: str = "CAB-UnityPy_Mod.resS"):
-        """
-        Creates a new cab file in the bundle that contains the given data.
-        This is usefull for asset types that use resource files.
-        """
-        if not isinstance(
-            self.parent, (File.BundleFile.BundleFile, File.WebFile.WebFile)
-        ):
-            return None
-
-        cab = self.parent.get_writeable_cab(name)
-        cab.path = f"archive:/{self.name}/{name}"
-        if not any(cab.path == x.path for x in self.externals):
-            # register as external
-            class FileIdentifierFake:
-                pass
-
-            file_identifier = FileIdentifierFake()
-            file_identifier.__class__ = FileIdentifier
-            file_identifier.temp_empty = ""
-            import uuid
-
-            file_identifier.guid = uuid.uuid1().urn[-16:].encode("ascii")
-            file_identifier.path = cab.path
-            file_identifier.type = 0
-            self.externals.append(file_identifier)
-
-        return cab
 
     def save(self, packer: str = None) -> bytes:
         # 1. header -> has to be delayed until the very end

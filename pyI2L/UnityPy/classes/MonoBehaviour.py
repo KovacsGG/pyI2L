@@ -1,7 +1,6 @@
 from .Behaviour import Behaviour
 from .PPtr import PPtr, save_ptr
 from ..streams import EndianBinaryReader, EndianBinaryWriter
-from ..exceptions import TypeTreeError as TypeTreeError
 
 class MonoBehaviour(Behaviour):
     def __init__(self, reader: EndianBinaryReader):
@@ -10,12 +9,6 @@ class MonoBehaviour(Behaviour):
         self.name = reader.read_aligned_string()
 
         self._raw_offset = reader.Position
-        if self.assets_file._enable_type_tree:
-            try:
-                self.read_typetree()
-            except TypeTreeError as e:
-                print("Failed to read TypeTree:\n", e)
-                self.assets_file._enable_type_tree = False
 
     def save(self, writer: EndianBinaryWriter = None, raw_data: bytes = None):
         if writer is None:
