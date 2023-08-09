@@ -35,6 +35,9 @@ class Field:
             bytearray(self.v, encoding="utf-8") +
             bytearray(self.padding)
         )
+    
+    def __eq__(self, other):
+        return self.v == other.v
 
 
 class Record:
@@ -89,6 +92,15 @@ class Record:
             i32(self.length) +
             bytearray(self.padding)
         )
+    
+    def __eq__(self, other):
+        if not (self.length == other.length and
+                self.id == other.id):
+            return False
+        for (s, o) in zip(self.items, other.items):
+            if not s == o:
+                return False
+        return True
 
 
 class Header:
@@ -105,6 +117,9 @@ class Header:
     
     def to_bytes(self):
         return i32([0, 0, 1])
+
+    def __eq__(self, other):
+        return True
 
 
 class Body:
@@ -145,6 +160,14 @@ class Body:
         for r in self.items:
             items += r.to_bytes()
         return i32(self.length) + items
+    
+    def __eq__(self, other):
+        if not self.length == other.length:
+            return False
+        for (s, o) in zip(self.items, other.items):
+            if not s == o:
+                return False
+        return True
 
 
 class Languages:
@@ -190,6 +213,14 @@ class Languages:
                 bytearray(24) + i32([3, 2, 1]) + bytearray(8)
         )
     
+    def __eq__(self, other):
+        if not len(self.items) == len(other.items):
+            return False
+        for (s, o) in zip(self.items, other.items):
+            if not s == o:
+                return False
+        return True
+    
 class I2:
 
     """I2 Localization table"""
@@ -227,3 +258,8 @@ class I2:
             self.body.to_bytes() +
             self.languages.to_bytes()
         )
+    
+    def __eq__(self, other):
+        return (self.body == other.body and
+                self.languages == other.languages and
+                self.header == other.header)
