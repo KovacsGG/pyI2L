@@ -1,3 +1,3 @@
-from . import Wavi, rawCSV
+from . import Wavi, rawCSV, binary
 
-__all__ = ["Wavi", "rawCSV"]
+__all__ = ["Wavi", "rawCSV", "binary"]
