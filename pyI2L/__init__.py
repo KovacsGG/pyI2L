@@ -30,13 +30,11 @@ def read_assets(file: str):
 
 def write_output(file: str, data: I2, format_writer):
     with open(file, "w", encoding="utf-8", newline='') as out_f:
-        out_f.write(str(data))
+        out_f.write(str(format_writer(data)))
 
 
 def read_input(file: str, format_reader):
-    with open(file, "r", encoding="utf-8", newline='') as in_f:
-        data = I2(format_reader(in_f))
-    return data
+    return I2(format_reader(file))
 
 
 def write_assets(file: str, bundle_file: str, data: I2):

@@ -2,7 +2,7 @@ from .utils import i32, to_i32, align
 
 from typing import Optional
 from collections.abc import Iterator, Sequence
-from io import BufferedIOBase
+from io import BufferedIOBase, SEEK_CUR
 
 
 class Field:
@@ -44,7 +44,7 @@ class Record:
     def __init__(self, src: BufferedIOBase | Sequence[str]):
         """Constructs Record from byte stream or list of strings.
         The byte stream should start at the item-count int of the key of the record.
-        The list should be formatted as [key, val0, val1, ...].
+        The list should be formatted as [key, padding, val0, val1, ...].
         """
         self.items: list[Field] = []
         if isinstance(src, BufferedIOBase):
@@ -54,24 +54,28 @@ class Record:
             for _ in range(self.length):
                 self.items.append(Field(src))
             assert to_i32(src) == self.length
-            assert src.read(24) == bytes(24)
+            self.padding = 0
+            while to_i32(src) == 0:
+                self.padding += 4
+            src.seek(-4, SEEK_CUR)
         elif isinstance(src, Sequence):
             self.id = Field(src[0])
-            self.length = len(src) - 1
-            for i in src[1:]:
+            self.padding = int(src[1])
+            self.length = len(src) - 2
+            for i in src[2:]:
                 self.items.append(Field(i))
         else:
             raise TypeError()            
     
     def __str__(self):
-        """Return string representation formatted as a row of Crowdin-flavored CSV.
-            "{id}","Text","","{item[0]}","{item[1]}",...\\n
+        """Return string representation formatted as a row of CSV.
+            "{id}",{padding},"{item[0]}","{item[1]}",...\\n
         Quotechars in values are doubled.
         """
         strings = ""
         for read in self.items:
             strings += ',"' + str(read).replace('"', '""') + '"'
-        return f'"{self.id}","Text",""{strings}\n'
+        return f'"{self.id}",{self.padding}{strings}\n'
     
     def to_bytes(self):
         items = bytearray()
@@ -83,7 +87,7 @@ class Record:
             i32(self.length) +
             items +
             i32(self.length) +
-            bytearray(24)
+            bytearray(self.padding)
         )
 
 
@@ -126,8 +130,8 @@ class Body:
             raise TypeError()
     
     def __str__(self):
-        """Return string representation formatted as a heading-less Crowdin-flavored CSV.
-            "{id}","Text","","{item[0]}","{item[1]}",...\\n
+        """Return string representation formatted as a heading-less CSV.
+            "{id}",{padding},"{item[0]}","{item[1]}",...\\n
             ...
         Quotechars in values are doubled.
         """
@@ -168,13 +172,13 @@ class Languages:
             raise TypeError()
         
     def __str__(self):
-        """Return string representation formatted as the header of a Crowdin-falvored CSV.
-            "Key","Type","Desc","{lang[0].name} {lang[0].code}","{lang[1].name} {lang[1].code}",...\\n
+        """Return string representation formatted as the header of a CSV file.
+            "Key","Padding","{lang[0].name} [{lang[0].code}]","{lang[1].name} [{lang[1].code}]",...\\n
         """
-        strings = ',"English"'
-        for i in range(2, len(self.items), 2):
+        strings = ""
+        for i in range(0, len(self.items), 2):
             strings += f',"{self.items[i]} [{self.items[i + 1]}]"'
-        return f'"Key","Type","Desc"{strings}\n'
+        return f'"Key","Padding"{strings}\n'
     
     def to_bytes(self):
         items = bytearray()
@@ -196,8 +200,8 @@ class I2:
             [lang0.name, lang0.code, lang1.name, lang1.code, ...]
         It should iterate on a list of strings for every (logical) row of CSV.
         The fields should be formatted as:
-            [key0, val0.0, val0.1, ...]
-            [key1, val1.0, val1.1, ...]
+            [key0, padding0, val0.0, val0.1, ...]
+            [key1, padding1, val1.0, val1.1, ...]
             ...
         """
         if isinstance(src, BufferedIOBase):
@@ -212,7 +216,7 @@ class I2:
             raise TypeError()
 
     def __str__(self):
-        """Returns string representation formatted as a Crowdin-flavored CSV.
+        """Returns string representation formatted as a CSV file.
         Quotechars are doubled.
         """
         return f"{self.languages}{self.body}"

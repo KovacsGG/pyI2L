@@ -6,7 +6,9 @@ ext = ".csv"
 
 class Reader:
     def __init__(self, file):
-        self.reader = CSVReader(file)
+        with open(file, "rb") as f:
+            data = f.read()
+        self.reader = CSVReader(data)
         self.languages = self.format_head(next(self.reader))
 
     def format_head(self, row: list[str]):
