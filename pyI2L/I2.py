@@ -47,7 +47,7 @@ class Record:
     def __init__(self, src: BufferedIOBase | Sequence[str]):
         """Constructs Record from byte stream or list of strings.
         The byte stream should start at the item-count int of the key of the record.
-        The list should be formatted as [key, padding, val0, val1, ...].
+        The list should be formatted as [key, val0, val1, ...].
         """
         self.items: list[Field] = []
         if isinstance(src, BufferedIOBase):
@@ -57,28 +57,13 @@ class Record:
             for _ in range(self.length):
                 self.items.append(Field(src))
             assert to_i32(src) == self.length
-            self.padding = 0
-            while to_i32(src) == 0:
-                self.padding += 4
-            src.seek(-4, SEEK_CUR)
         elif isinstance(src, Sequence):
             self.id = Field(src[0])
-            self.padding = int(src[1])
-            self.length = len(src) - 2
-            for i in src[2:]:
+            self.length = len(src) - 1
+            for i in src[1:]:
                 self.items.append(Field(i))
         else:
             raise TypeError()            
-    
-    def __str__(self):
-        """Return string representation formatted as a row of CSV.
-            "{id}",{padding},"{item[0]}","{item[1]}",...\\n
-        Quotechars in values are doubled.
-        """
-        strings = ""
-        for read in self.items:
-            strings += ',"' + str(read).replace('"', '""') + '"'
-        return f'"{self.id}",{self.padding}{strings}\n'
     
     def to_bytes(self):
         items = bytearray()
@@ -89,8 +74,7 @@ class Record:
             bytearray(4) +
             i32(self.length) +
             items +
-            i32(self.length) +
-            bytearray(self.padding)
+            i32(self.length)
         )
     
     def __eq__(self, other):
@@ -126,16 +110,28 @@ class Body:
 
     """Container of I2 Localization Records"""
 
-    def __init__(self, src: BufferedIOBase | Iterator[Sequence[str]]):
+    def __init__(self, src: BufferedIOBase | Iterator[Sequence[str]], padding = None):
         """Contruct Body from byte stream or iterator.
         The byte stream should start at the item-count int of the container.
         The iterator should return list of strings in a format compatible with Record.__init__().
         """
         self.items: list[Record] = []
+        if padding is None:
+            self.padding = 16
+        else:
+            self.padding = padding
         if isinstance(src, BufferedIOBase):
             self.length = to_i32(src)
             for _ in range(self.length):
                 self.items.append(Record(src))
+                if padding:
+                    assert src.read(padding) == bytes(padding)
+                else:
+                    padding = 0
+                    while to_i32(src) == 0:
+                        padding += 4
+                    src.seek(-4, SEEK_CUR)
+                    self.padding = padding
         elif isinstance(src, Iterator):
             self.length = 0
             for r in src:
@@ -144,25 +140,15 @@ class Body:
         else:
             raise TypeError()
     
-    def __str__(self):
-        """Return string representation formatted as a heading-less CSV.
-            "{id}",{padding},"{item[0]}","{item[1]}",...\\n
-            ...
-        Quotechars in values are doubled.
-        """
-        s = ""
-        for r in self.items:
-            s += str(r)
-        return s
-    
     def to_bytes(self):
         items = bytearray() 
         for r in self.items:
-            items += r.to_bytes()
+            items += r.to_bytes() + bytes(self.padding)
         return i32(self.length) + items
     
     def __eq__(self, other):
-        if not self.length == other.length:
+        if not (self.length == other.length and
+                self.padding == other.padding):
             return False
         for (s, o) in zip(self.items, other.items):
             if not s == o:
@@ -181,7 +167,7 @@ class Languages:
         """
         self.items: list[Field] = []
         if isinstance(src, BufferedIOBase):
-            assert src.read(8) == i32([1, 0])
+            assert src.read(12) == i32([0, 1, 0])
             self.length = to_i32(src)
             for _ in range(self.length):
                 self.items.append(Field(src))
@@ -193,21 +179,12 @@ class Languages:
                 self.items.append(Field(i))
         else:
             raise TypeError()
-        
-    def __str__(self):
-        """Return string representation formatted as the header of a CSV file.
-            "Key","Padding","{lang[0].name} [{lang[0].code}]","{lang[1].name} [{lang[1].code}]",...\\n
-        """
-        strings = ""
-        for i in range(0, len(self.items), 2):
-            strings += f',"{self.items[i]} [{self.items[i + 1]}]"'
-        return f'"Key","Padding"{strings}\n'
     
     def to_bytes(self):
         items = bytearray()
         for i in range(0, len(self.items), 2):
             items += self.items[i].to_bytes() + self.items[i + 1].to_bytes() + bytearray(4)
-        return (i32([1, 0]) +
+        return (i32([0, 1, 0]) +
                 i32(self.length) +
                 items +
                 bytearray(24) + i32([3, 2, 1]) + bytearray(8)
@@ -229,6 +206,7 @@ class I2:
         """Contruct table from byte stream or CSV iterator.
         The iterator should havea a languages attribute of a list of strings:
             [lang0.name, lang0.code, lang1.name, lang1.code, ...]
+        And a padding attribute that is the number of bytes between records.
         It should iterate on a list of strings for every (logical) row of CSV.
         The fields should be formatted as:
             [key0, padding0, val0.0, val0.1, ...]
@@ -239,18 +217,14 @@ class I2:
             self.header = Header(src)
             self.body = Body(src)
             self.languages = Languages(src)
-        elif isinstance(src, Iterator) and hasattr(src, "languages"):
+        elif (isinstance(src, Iterator) and
+              hasattr(src, "languages") and
+              hasattr(src, "padding")):
             self.languages = Languages(src.languages) #type: ignore
-            self.body = Body(src)
+            self.body = Body(src, padding=src.padding) #type: ignore
             self.header = Header()
         else:
             raise TypeError()
-
-    def __str__(self):
-        """Returns string representation formatted as a CSV file.
-        Quotechars are doubled.
-        """
-        return f"{self.languages}{self.body}"
     
     def to_bytes(self):
         return (

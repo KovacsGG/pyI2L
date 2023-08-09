@@ -18,3 +18,15 @@ for (src, asset, csv, out_f) in zip(sources, assets, csvs, out_assets):
     transformed = pyI2L.read_input(csv, pyI2L.parsers.rawCSV.Reader)
     assert original == transformed
     assert original.to_bytes() == transformed.to_bytes()
+
+def test_format(parser, src, out):
+    original = pyI2L.read_assets(src)
+    pyI2L.write_output(out, original, parser.Writer)
+    transformed = pyI2L.read_input(out, parser.Reader)
+    assert original == transformed
+    assert original.to_bytes() == transformed.to_bytes()
+
+test_format(pyI2L.parsers.binary, "test/export/resources.assets", "test/import/out.dat")
+test_format(pyI2L.parsers.Wavi, "test/export/resources.assets", "test/import/out.csv")
+
+print("Tests complete.")

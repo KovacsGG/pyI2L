@@ -29,8 +29,8 @@ def read_assets(file: str):
 
 
 def write_output(file: str, data: I2, format_writer):
-    with open(file, "w", encoding="utf-8", newline='') as out_f:
-        out_f.write(str(format_writer(data)))
+    with open(file, "wb") as out_f:
+        out_f.write(format_writer(data).to_bytes())
 
 
 def read_input(file: str, format_reader):

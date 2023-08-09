@@ -10,6 +10,7 @@ class Reader:
             data = f.read()
         self.reader = CSVReader(data)
         self.languages = self.format_head(next(self.reader))
+        self.padding = 24
 
     def format_head(self, row: list[str]):
         langs = ["English", "en"]
@@ -26,7 +27,7 @@ class Reader:
     
     def __next__(self):
         row = next(self.reader)
-        return row[0:1] + [24] + row[3:]
+        return row[0:1] + row[3:]
 
 class Writer:
     def __init__(self, data: I2):
@@ -47,11 +48,11 @@ class Writer:
     def record(self, r: Record):
         strings = ""
         for read in r.items:
-            strings += ',"' + self.field(read).replace('"', '""') + '"'
+            strings += ',"' + self.field(read) + '"'
         return f'"{r.id}","Text",""{strings}\n'
     
     def field(self, f: Field):
-        return f.v
+        return f.v.replace('"', '""')
 
-    def __str__(self):
-        return f"{self.languages()}{self.body()}"
+    def to_bytes(self):
+        return f"{self.languages()}{self.body()}".encode("utf-8")

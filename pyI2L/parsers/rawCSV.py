@@ -1,5 +1,5 @@
 from ..CSVReader import CSVReader
-from ..I2 import I2
+from ..I2 import I2, Record, Field
 ext = ".csv"
 
 
@@ -9,11 +9,13 @@ class Reader:
         with open(file, "rb") as f:
             data = f.read()
         self.reader = CSVReader(data)
+        self.padding = 16
         self.languages = self.format_head(next(self.reader))
 
     def format_head(self, row: list[str]):
+        self.padding = int(row[0])
         langs = []
-        for s in row[2:]:
+        for s in row[1:]:
             (lang, code) = s.rsplit(" ", 1)
             lang = lang.rstrip()
             code = code[1:-1]
@@ -31,5 +33,26 @@ class Writer:
     def __init__(self, data: I2):
         self.data = data
     
-    def __str__(self):
-        return str(self.data)
+    def languages(self):
+        strings = ""
+        for i in range(0, len(self.data.languages.items), 2):
+            strings += f',"{self.data.languages.items[i]} [{self.data.languages.items[i + 1]}]"'
+        return f'{self.data.body.padding}{strings}\n'
+    
+    def body(self):
+        s = ""
+        for r in self.data.body.items:
+            s += self.record(r)
+        return s
+    
+    def record(self, r: Record):
+        strings = ""
+        for read in r.items:
+            strings += ',"' + self.field(read) + '"'
+        return f'"{r.id}"{strings}\n'
+    
+    def field(self, f: Field):
+        return f.v.replace('"', '""')
+
+    def to_bytes(self):
+        return f"{self.languages()}{self.body()}".encode("utf-8")
