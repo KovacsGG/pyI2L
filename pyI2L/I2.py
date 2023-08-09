@@ -158,7 +158,7 @@ class Languages:
         """
         self.items: list[Field] = []
         if isinstance(src, BufferedIOBase):
-            assert src.read(12) == i32([0, 1, 0])
+            assert src.read(8) == i32([1, 0])
             self.length = to_i32(src)
             for _ in range(self.length):
                 self.items.append(Field(src))
@@ -184,7 +184,7 @@ class Languages:
         items = bytearray()
         for i in range(0, len(self.items), 2):
             items += self.items[i].to_bytes() + self.items[i + 1].to_bytes() + bytearray(4)
-        return (i32([0, 1, 0]) +
+        return (i32([1, 0]) +
                 i32(self.length) +
                 items +
                 bytearray(24) + i32([3, 2, 1]) + bytearray(8)
