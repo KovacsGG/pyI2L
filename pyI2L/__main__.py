@@ -2,7 +2,7 @@
 from . import read_assets, read_input, write_assets, write_output
 from . import parsers
 
-import argparse, sys
+import argparse
 
 argParser = argparse.ArgumentParser( description="Convert between Inter Illusion's\
                                      I2 Localization Unity assets\
@@ -42,7 +42,7 @@ argparse.FileType(args.output)
 # Operation
 assets = read_assets(args.assets)
 if args.apply is None:
-    write_output(args.output, assets, formatter.Reader)
+    write_output(args.output, assets, formatter.Writer)
 else:    
     argparse.FileType(args.apply)
     apply = read_input(args.apply, formatter.Reader)
