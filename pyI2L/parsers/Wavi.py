@@ -26,7 +26,7 @@ class Reader:
     
     def __next__(self):
         row = next(self.reader)
-        return row[0:1] + row[3:]
+        return row[0:1] + [24] + row[3:]
 
 class Writer:
     def __init__(self, data: I2):
