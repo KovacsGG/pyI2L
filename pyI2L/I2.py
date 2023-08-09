@@ -1,20 +1,20 @@
-from utils import i32, to_i32, align
+from .utils import i32, to_i32, align
 
 from typing import Optional
 from collections.abc import Iterator, Sequence
-from io import BufferedReader
+from io import BufferedIOBase
 
 
 class Field:
 
     """Simpled value of I2 Localization"""
 
-    def __init__(self, src: BufferedReader | str):
+    def __init__(self, src: BufferedIOBase | str):
         """Constructs a value from byte stream or string.
         The byte stream should start at the length int of the value.
         A multiple of 4 bytes will be read.
         """
-        if isinstance(src, BufferedReader):
+        if isinstance(src, BufferedIOBase):
             self.span = to_i32(src)
             self.v = src.read(self.span).decode("utf-8")
             self.padding = align(self.span)
@@ -41,13 +41,13 @@ class Record:
 
     """Keyed array of I2 Localization strings."""
 
-    def __init__(self, src: BufferedReader | Sequence[str]):
+    def __init__(self, src: BufferedIOBase | Sequence[str]):
         """Constructs Record from byte stream or list of strings.
         The byte stream should start at the item-count int of the key of the record.
         The list should be formatted as [key, val0, val1, ...].
         """
         self.items: list[Field] = []
-        if isinstance(src, BufferedReader):
+        if isinstance(src, BufferedIOBase):
             self.id = Field(src)
             assert src.read(4) == bytes(4)
             self.length = to_i32(src)
@@ -91,37 +91,29 @@ class Header:
     
     """I2 Localization preamble."""
     
-    def __init__(self, src: Optional[BufferedReader] = None):
+    def __init__(self, src: Optional[BufferedIOBase] = None):
         """Construct Header from optional byte stream
         Byte streams will be expected to equal a particular pattern.
         If no source is provided, the known pattern will be used.
         """
         if src is not None:
-            assert src.read(56) == (
-                bytearray(12) + i32([1, 1, 282, 0]) +
-                Field("I2Languages").to_bytes() +
-                i32([0, 0, 1])
-            )
+            assert src.read(12) == i32([0, 0, 1])
     
     def to_bytes(self):
-        return (
-            bytearray(12) + i32([1, 1, 282, 0]) +
-            Field("I2Languages").to_bytes() +
-            i32([0, 0, 1])
-        )
+        return i32([0, 0, 1])
 
 
 class Body:
 
     """Container of I2 Localization Records"""
 
-    def __init__(self, src: BufferedReader | Iterator[Sequence[str]]):
+    def __init__(self, src: BufferedIOBase | Iterator[Sequence[str]]):
         """Contruct Body from byte stream or iterator.
         The byte stream should start at the item-count int of the container.
         The iterator should return list of strings in a format compatible with Record.__init__().
         """
         self.items: list[Record] = []
-        if isinstance(src, BufferedReader):
+        if isinstance(src, BufferedIOBase):
             self.length = to_i32(src)
             for _ in range(self.length):
                 self.items.append(Record(src))
@@ -155,13 +147,13 @@ class Languages:
 
     """Language enumeration of I2 Localization."""
 
-    def __init__(self, src: BufferedReader | Sequence[str]):
+    def __init__(self, src: BufferedIOBase | Sequence[str]):
         """Construct language enumeration from byte stream or list of strings.
         The byte stream should start with int32[0, 1, 0] pattern preceding item-count int.
         The list should be formatted as [lang0.name, lang0.code, lang1.name, lang1.code, ...].
         """
         self.items: list[Field] = []
-        if isinstance(src, BufferedReader):
+        if isinstance(src, BufferedIOBase):
             assert src.read(12) == i32([0, 1, 0])
             self.length = to_i32(src)
             for _ in range(self.length):
@@ -198,7 +190,7 @@ class I2:
 
     """I2 Localization table"""
 
-    def __init__(self, src: BufferedReader | Iterator[Sequence[str]]):
+    def __init__(self, src: BufferedIOBase | Iterator[Sequence[str]]):
         """Contruct table from byte stream or CSV iterator.
         The iterator should havea a languages attribute of a list of strings:
             [lang0.name, lang0.code, lang1.name, lang1.code, ...]
@@ -208,12 +200,12 @@ class I2:
             [key1, val1.0, val1.1, ...]
             ...
         """
-        if isinstance(src, BufferedReader):
+        if isinstance(src, BufferedIOBase):
             self.header = Header(src)
             self.body = Body(src)
             self.languages = Languages(src)
         elif isinstance(src, Iterator) and hasattr(src, "languages"):
-            self.languages = Languages(src.languages)
+            self.languages = Languages(src.languages) #type: ignore
             self.body = Body(src)
             self.header = Header()
         else:

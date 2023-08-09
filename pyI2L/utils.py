@@ -1,4 +1,4 @@
-from typing import BinaryIO
+from io import BufferedIOBase
 
 
 
@@ -7,7 +7,7 @@ def align(i: int):
     return (4 - i % 4) % 4
 
 
-def to_i32(file: BinaryIO):
+def to_i32(file: BufferedIOBase):
     """Read a 32bit int from a byte stream."""
     return int.from_bytes(file.read(4), "little")
 

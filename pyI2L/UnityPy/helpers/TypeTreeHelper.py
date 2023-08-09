@@ -50,10 +50,7 @@ class TypeTreeNode(object):
         return f"<TypeTreeNode({self.m_Level} {self.m_Type} {self.m_Name})>"
 
 
-try:
-    from ..UnityPyBoost import TypeTreeNode, read_typetree as read_typetree_c
-except:
-    read_typetree_c = None
+read_typetree_c = None
 
 
 def node_dict_to_node_cls(nodes: List[dict]) -> List[TypeTreeNode]:

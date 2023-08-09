@@ -1,50 +1,51 @@
 #!/usr/bin/env python3
-from I2 import I2
+from . import read_assets, read_input, write_assets, write_output
+from . import parsers
 
-import argparse, sys, importlib
+import argparse, sys
 
 argParser = argparse.ArgumentParser( description="Convert between Inter Illusion's\
                                      I2 Localization Unity assets\
                                      and exported Crowdin CSV files.",
+                                     usage="%(PROG)s ASSET [options]",
                                      epilog="See also https://github.com/KovacsGG/pyI2L" )
-argParser.add_argument("-i", "--input",
-                       help="Input file to convert.")
-argParser.add_argument("-f", "--format",
-                       help="Empty for binary input or the \
-                            formatter module from parsers directory \
-                            to shape text input or output.")
+argParser.add_argument("assets",
+                       default="./resources.assets",
+                       help="Asset bundle file to operate on.\
+                        Defaults to \"./resources.assets\"")
+argParser.add_argument("-a", "--apply",
+                       help="I2Languages object or CSV data \
+                            with which to overwrite translations in the bundle. \
+                            Omit to extract the I2L asset from the bundle.")
 argParser.add_argument("-o", "--output",
-                       default="./out",
                        help="Name of the output file.")
+argParser.add_argument("-f", "--format",
+                       default="Wavi",
+                       help=f"Formatter to read the input \
+                            or write the output.\n \
+                            Possible values: {parsers.__all__}\n\
+                            \"Wavi\" by default.")
 
+# Validation and defaults setting
 args = argParser.parse_args()
-if len(sys.argv) == 1:
-    args.input = "./Wavi_localization.csv"
-    args.output = "./I2Languages-resources.assets-80.dat"
-    args.format = "Wavi"
-argparse.FileType(args.input)
+argparse.FileType(args.assets)
+formatter = parsers.__dict__[args.format]
+assert args.format in parsers.__all__, "Formatting module not found"
+if args.output is None:
+    if args.apply is not None and hasattr(formatter, "ext"):
+        ext = formatter.ext
+    else:
+        ext = ".out"
+    args.output = args.assets + ext
 argparse.FileType(args.output)
 
-if args.format is None:
-    with open(args.input, "rb") as in_f:
-        try:
-            data = I2(in_f)
-        except Exception as e:
-            print(f"Error at byte {in_f.tell()}", file=sys.stderr)
-            with open("rest.hex", "wb") as rest:
-                rest.write(in_f.read())
-            raise e
-    with open(args.output, "w", encoding="utf-8", newline='') as out_f:
-        out_f.write(str(data))
-else:
-    try:
-        formatter = importlib.import_module(f"parsers.{args.format}")
-    except Exception as e:
-        print("Error importing formatter.", file=sys.stderr)
-        raise e
-    with open(args.input, "r", encoding="utf-8", newline='') as in_f:
-        data = I2(formatter.Reader(in_f))
-    with open(args.output, "wb") as out_f:
-        out_f.write(data.to_bytes())
+# Operation
+assets = read_assets(args.assets)
+if args.apply is None:
+    write_output(args.output, assets, formatter.Reader)
+else:    
+    argparse.FileType(args.apply)
+    apply = read_input(args.apply, formatter.Reader)
+    write_assets(args.output, args.assets, apply)
 
 print("Finished with no errors.")

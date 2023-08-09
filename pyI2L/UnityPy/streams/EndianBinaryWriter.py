@@ -1,7 +1,6 @@
 import io
 from struct import pack
 
-from ..math import Color, Matrix4x4, Quaternion, Vector2, Vector3, Vector4, Rectangle
 
 
 class EndianBinaryWriter:
@@ -96,43 +95,6 @@ class EndianBinaryWriter:
         align = (alignment - pos % alignment) % alignment
         self.write(b"\0" * align)
 
-    def write_quaternion(self, value: Quaternion):
-        self.write_float(value.X)
-        self.write_float(value.Y)
-        self.write_float(value.Z)
-        self.write_float(value.W)
-
-    def write_vector2(self, value: Vector2):
-        self.write_float(value.X)
-        self.write_float(value.Y)
-
-    def write_vector3(self, value: Vector3):
-        self.write_float(value.X)
-        self.write_float(value.Y)
-        self.write_float(value.Z)
-
-    def write_vector4(self, value: Vector4):
-        self.write_float(value.X)
-        self.write_float(value.Y)
-        self.write_float(value.Z)
-        self.write_float(value.W)
-
-    def write_rectangle_f(self, value: Rectangle):
-        self.write_float(value.x)
-        self.write_float(value.y)
-        self.write_float(value.width)
-        self.write_float(value.height)
-
-    def write_color4(self, value: Color):
-        self.write_float(value.R)
-        self.write_float(value.G)
-        self.write_float(value.B)
-        self.write_float(value.A)
-
-    def write_matrix(self, value: Matrix4x4):
-        for val in value.M:
-            self.write_float(val)
-
     def write_array(self, command, value: list, write_length: bool = True):
         if write_length:
             self.write_int(len(value))
@@ -160,12 +122,3 @@ class EndianBinaryWriter:
 
     def write_string_array(self, value: list):
         self.write_array(self.write_aligned_string, value)
-
-    def write_vector2_array(self, value: list):
-        self.write_array(self.write_vector2, value)
-
-    def write_vector4_array(self, value: list):
-        self.write_array(self.write_vector4, value)
-
-    def write_matrix_array(self, value: list):
-        self.write_array(self.write_matrix, value)

@@ -8,7 +8,6 @@ reNot0 = re.compile(b"(.*?)\x00")
 
 SYS_ENDIAN = "<" if sys.byteorder == "little" else ">"
 
-from ..math import Color, Matrix4x4, Quaternion, Vector2, Vector3, Vector4, Rectangle
 
 # generate unpack and unpack_from functions
 TYPE_PARAM_SIZE_LIST = [
@@ -157,37 +156,8 @@ class EndianBinaryReader:
     def align_stream(self, alignment=4):
         self.Position += (alignment - self.Position % alignment) % alignment
 
-    def read_quaternion(self) -> Quaternion:
-        return Quaternion(
-            self.read_float(), self.read_float(), self.read_float(), self.read_float()
-        )
-
-    def read_vector2(self) -> Vector2:
-        return Vector2(self.read_float(), self.read_float())
-
-    def read_vector3(self) -> Vector3:
-        return Vector3(self.read_float(), self.read_float(), self.read_float())
-
-    def read_vector4(self) -> Vector4:
-        return Vector4(
-            self.read_float(), self.read_float(), self.read_float(), self.read_float()
-        )
-
-    def read_rectangle_f(self) -> Rectangle:
-        return Rectangle(
-            self.read_float(), self.read_float(), self.read_float(), self.read_float()
-        )
-
-    def read_color4(self) -> Color:
-        return Color(
-            self.read_float(), self.read_float(), self.read_float(), self.read_float()
-        )
-
     def read_byte_array(self) -> bytes:
         return self.read(self.read_int())
-
-    def read_matrix(self) -> Matrix4x4:
-        return Matrix4x4(self.read_float_array(16))
 
     def read_array(self, command, length: int) -> list:
         return [command() for _ in range(length)]
@@ -223,15 +193,6 @@ class EndianBinaryReader:
 
     def read_string_array(self) -> List[str]:
         return self.read_array(self.read_aligned_string, self.read_int())
-
-    def read_vector2_array(self) -> List[Vector2]:
-        return self.read_array(self.read_vector2, self.read_int())
-
-    def read_vector4_array(self) -> List[Vector4]:
-        return self.read_array(self.read_vector4, self.read_int())
-
-    def read_matrix_array(self) -> List[Matrix4x4]:
-        return self.read_array(self.read_matrix, self.read_int())
 
     def real_offset(self) -> int:
         """Returns offset in the underlying file.
@@ -355,21 +316,6 @@ class EndianBinaryReader_Memoryview_LittleEndian(EndianBinaryReader_Memoryview):
         self.Position += 8
         return ret
 
-    def read_vector2(self):
-        (x, y) = unpack_little_vector2_from(self.view, self.Position)
-        self.Position += 8
-        return Vector2(x, y)
-
-    def read_vector3(self):
-        (x, y, z) = unpack_little_vector3_from(self.view, self.Position)
-        self.Position += 12
-        return Vector3(x, y, z)
-
-    def read_vector4(self):
-        (x, y, z, w) = unpack_little_vector4_from(self.view, self.Position)
-        self.Position += 16
-        return Vector4(x, y, z, w)
-
 
 class EndianBinaryReader_Memoryview_BigEndian(EndianBinaryReader_Memoryview):
     def read_u_short(self):
@@ -416,21 +362,6 @@ class EndianBinaryReader_Memoryview_BigEndian(EndianBinaryReader_Memoryview):
         (ret,) = unpack_big_double_from(self.view, self.Position)
         self.Position += 8
         return ret
-
-    def read_vector2(self):
-        (x, y) = unpack_big_vector2_from(self.view, self.Position)
-        self.Position += 8
-        return Vector2(x, y)
-
-    def read_vector3(self):
-        (x, y, z) = unpack_big_vector3_from(self.view, self.Position)
-        self.Position += 12
-        return Vector3(x, y, z)
-
-    def read_vector4(self):
-        (x, y, z, w) = unpack_big_vector4_from(self.view, self.Position)
-        self.Position += 16
-        return Vector4(x, y, z, w)
 
 
 class EndianBinaryReader_Streamable(EndianBinaryReader):
@@ -517,15 +448,6 @@ class EndianBinaryReader_Streamable_LittleEndian(EndianBinaryReader_Streamable):
     def read_double(self):
         return unpack_little_double(self.read(8))[0]
 
-    def read_vector2(self):
-        return Vector2(*unpack_little_vector2(self.read(8)))
-
-    def read_vector3(self):
-        return Vector3(*unpack_little_vector3(self.read(12)))
-
-    def read_vector4(self):
-        return Vector4(*unpack_little_vector4(self.read(16)))
-
 
 class EndianBinaryReader_Streamable_BigEndian(EndianBinaryReader_Streamable):
     def read_u_short(self):
@@ -554,12 +476,3 @@ class EndianBinaryReader_Streamable_BigEndian(EndianBinaryReader_Streamable):
 
     def read_double(self):
         return unpack_big_double(self.read(8))[0]
-
-    def read_vector2(self):
-        return Vector2(*unpack_big_vector2(self.read(8)))
-
-    def read_vector3(self):
-        return Vector3(*unpack_big_vector3(self.read(12)))
-
-    def read_vector4(self):
-        return Vector4(*unpack_big_vector4(self.read(16)))
