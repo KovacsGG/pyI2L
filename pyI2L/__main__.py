@@ -12,7 +12,7 @@ argParser = argparse.ArgumentParser( description="Convert between Inter Illusion
 argParser.add_argument("assets",
                     default="./resources.assets",
                     help="Asset bundle file to operate on.\
-                        Defaults to \"./resources.assets\"")
+                            Defaults to \"./resources.assets\"")
 argParser.add_argument("-a", "--apply",
                     help="I2Languages object or CSV data \
                             with which to overwrite translations in the bundle. \
