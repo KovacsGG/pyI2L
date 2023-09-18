@@ -1,4 +1,4 @@
-from ..CSVReader import CSVReader
+import csv
 from ..I2 import I2, Record, Field
 ext = ".csv"
 
@@ -6,9 +6,8 @@ ext = ".csv"
 
 class Reader:
     def __init__(self, file):
-        with open(file, "rb") as f:
-            data = f.read()
-        self.reader = CSVReader(data)
+        self.file = open(file, "r", encoding="utf-8", newline="")
+        self.reader = csv.reader(self.file)
         self.languages = self.format_head(next(self.reader))
         self.padding = 24
 
@@ -28,6 +27,9 @@ class Reader:
     def __next__(self):
         row = next(self.reader)
         return row[0:1] + row[3:]
+    
+    def __del__(self):
+            self.file.close()
 
 class Writer:
     def __init__(self, data: I2):
