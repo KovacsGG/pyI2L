@@ -7,10 +7,11 @@ import argparse
 argParser = argparse.ArgumentParser( description="Convert between Inter Illusion's\
                                     I2 Localization Unity assets\
                                     and exported Crowdin CSV files.",
-                                    usage="%(PROG)s ASSETS [options]",
+                                    usage="%(prog)s ASSETS [options]",
                                     epilog="See also https://github.com/KovacsGG/pyI2L" )
 argParser.add_argument("assets",
                     default="./resources.assets",
+                    nargs="?",
                     help="Asset bundle file to operate on.\
                             Defaults to \"./resources.assets\"")
 argParser.add_argument("-a", "--apply",
