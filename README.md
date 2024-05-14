@@ -8,19 +8,21 @@ Download the latest Windows release to the right, or clone the repo and run with
 
 ## Usage
 
+`.\pyI2L.exe ASSETS OPTIONS`
+
 Use without arguments to extract `./resources.assets.csv` from `./resources.assets`. The CSV will be in the format used by The Wandering Village Crowdin project.
 
 ### `-a`, `--apply`
 
-Sets apply mode and specifies the source file that containes the translations that should be modded into the bundle. Omitting it will set extract mode.
+Sets apply mode and specifies the source file that contains the translations that should be modded into the bundle. Omitting it will set extract mode.
 
 ### `-f`, `--format`
 
-In apply mode it sets how the applied file will be parsed. In extract mode it will format the output file accordingly. Formatters can be installed by dropping them in the `parsers` directory. See [#Installing a formatter](#installing_a_formatter). Defaults to `Wavi` (for The Wandering Village Crowdin project).
+In apply mode it sets how the applied file will be parsed. In extract mode it will format the output file accordingly. Formatters can be installed by dropping them in the `parsers` directory. See [#Installing a formatter](#installing_a_formatter). Defaults to `Wavi` (for The Wandering Village Crowdin project). `rawCSV` recommended as a project-agnostic choice.
 
 ### `-o`, `--output`
 
-Sets the path of the produced file. In extract mode it defaults to `[ASSETS].[EXT]`, where `EXT` is an appropriate file extension for the used format. In apply mode it defaults to `[ASSETS]` therefore will overwrite it.
+Sets the path of the produced file. In extract mode it defaults to `[ASSETS].[EXT]`, where `EXT` is an appropriate file extension for the used format. In apply mode it defaults to `[ASSETS]` and so will overwrite it.
 
 Use `./pyI2L.exe -h` for more information on usage.
 
