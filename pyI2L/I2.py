@@ -167,7 +167,8 @@ class Languages:
         """
         self.items: list[Field] = []
         if isinstance(src, BufferedIOBase):
-            assert src.read(12) == i32([0, 1, 0])
+            preamble = src.read(12)
+            assert preamble == i32([0, 1, 0]) or preamble == i32([0, 0, 0])
             self.length = to_i32(src)
             for _ in range(self.length):
                 self.items.append(Field(src))
