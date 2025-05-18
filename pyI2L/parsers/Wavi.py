@@ -26,7 +26,7 @@ class Reader:
     
     def __next__(self):
         row = next(self.reader)
-        return row[0:1] + row[3:]
+        return row[0:1] + row[3:] + [0] 
     
     def __del__(self):
             self.file.close()

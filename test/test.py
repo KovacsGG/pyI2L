@@ -4,9 +4,9 @@ import pyI2L
 
 
 
-sources = ["test/export/resources.assets", "test/export/IXION-resources.assets", "test/export/Xenonauts2-resources.assets", "test/export/TSPUD-resources.assets", "test/export/VampireSurvivors-resources.assets"]
-csvs  = ["test/import/Wavi.csv", "test/import/IXION.csv", "test/import/Xenonauts2.csv", "test/import/TSPUD.csv", "test/import/VampireSurvivors.csv"]
-out_assets = ["test/import/Wavi.dat", "test/import/IXION.dat", "test/import/Xenonauts2.dat", "test/import/TSPUD.dat", "test/import/VampireSurvivors.dat"]
+sources = ["test/export/resources.assets", "test/export/IXION-resources.assets", "test/export/Xenonauts2-resources.assets", "test/export/TSPUD-resources.assets", "test/export/VampireSurvivors-resources.assets", "test/export/OneDreamer-resources.assets"]
+csvs  = ["test/import/Wavi.csv", "test/import/IXION.csv", "test/import/Xenonauts2.csv", "test/import/TSPUD.csv", "test/import/VampireSurvivors.csv", "test/import/OneDreamer.csv"]
+out_assets = ["test/import/Wavi.dat", "test/import/IXION.dat", "test/import/Xenonauts2.dat", "test/import/TSPUD.dat", "test/import/VampireSurvivors.dat", "test/import/OneDreamer.dat"]
 for (src, csv, out_f) in zip(sources, csvs, out_assets):
     original = pyI2L.read_assets(src)
     pyI2L.write_assets(out_f, src, original)

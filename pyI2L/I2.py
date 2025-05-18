@@ -52,15 +52,16 @@ class Record:
         self.items: list[Field] = []
         if isinstance(src, BufferedIOBase):
             self.id = Field(src)
-            assert src.read(4) == bytes(4)
+            self.type = to_i32(src)
             self.length = to_i32(src)
             for _ in range(self.length):
                 self.items.append(Field(src))
             assert to_i32(src) == self.length
         elif isinstance(src, Sequence):
             self.id = Field(src[0])
-            self.length = len(src) - 1
-            for i in src[1:]:
+            self.type = src[-1]
+            self.length = len(src) - 2
+            for i in src[1:-1]:
                 self.items.append(Field(i))
         else:
             raise TypeError()            
@@ -71,15 +72,16 @@ class Record:
             items += i.to_bytes()
         return (
             self.id.to_bytes() +
-            bytearray(4) +
+            i32(self.type) +
             i32(self.length) +
             items +
             i32(self.length)
         )
     
     def __eq__(self, other):
-        if not (self.length == other.length and
-                self.id == other.id):
+        if (self.length != other.length or
+            self.id != other.id or
+            self.type != other.type):
             return False
         for (s, o) in zip(self.items, other.items):
             if not s == o:

@@ -44,7 +44,7 @@ The module should export an iterable `Reader(file_path: str)` class with a `lang
 `next(Reader())` should return a list of strings containing a key and its translations:
 
 ```py
-[key: str, value0: str, value1: str, ...]
+[key: str, value0: str, value1: str, ..., type: int]
 ```
 
 `languages` should be a list of strings containing a column/language name and code for every alternative:
@@ -71,6 +71,7 @@ class Body:
     items: list[Record]
 class Record:
     id: int # Key
+    type: int # Usually 0, 9 for some records in some games. The meaning is unkown
     length: int # Number of fields
     items: list[Field]
 class Field:

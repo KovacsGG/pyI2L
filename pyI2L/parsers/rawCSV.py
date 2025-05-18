@@ -26,7 +26,9 @@ class Reader:
         return self
     
     def __next__(self):
-        return next(self.reader)
+        row = next(self.reader)
+        row[-1] = int(row[-1])
+        return row
     
     def __del__(self):
         self.file.close()
@@ -51,7 +53,7 @@ class Writer:
         strings = ""
         for read in r.items:
             strings += ',"' + self.field(read) + '"'
-        return f'"{r.id}"{strings}\n'
+        return f'"{r.id}"{strings},{r.type}\n'
     
     def field(self, f: Field):
         return f.v.replace('"', '""')
