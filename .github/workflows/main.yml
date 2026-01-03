@@ -49,6 +49,8 @@ jobs:
 
   release:
     needs: build
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
 
     steps:
@@ -72,8 +74,7 @@ jobs:
           tag_name: ${{ github.event.inputs.version }}
           name: ${{ github.event.inputs.version }}
           draft: true
-          prerelease: false
           files: |
-            pyI2l-Windows.exe
-            pyI2l-Linux
-            pyI2L-macOS
+            pyI2l-windows
+            pyI2l-ubuntu
+            pyI2L-macos
