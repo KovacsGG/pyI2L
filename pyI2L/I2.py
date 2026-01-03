@@ -163,30 +163,28 @@ class Languages:
     """Language enumeration of I2 Localization."""
 
     def __init__(self, src: BufferedIOBase | Sequence[str]):
-        """Construct language enumeration from byte stream or list of strings.
-        The byte stream should start with int32[0, 1, 0] pattern preceding item-count int.
-        The list should be formatted as [lang0.name, lang0.code, lang1.name, lang1.code, ...].
+        """Construct field names from byte stream or list of tuples.
+        The byte stream should start with int32[0, 1, 0] or int32[0, 0, 0], then the number of fields. The names are two data fields and an i32.
+        The list should be formatted as [(lang0.name, lang0.code, int0), (lang1.name, lang1.code, int1), ...].
         """
-        self.items: list[Field] = []
+        self.items: list[tuple[Field, Field, int]] = []
         if isinstance(src, BufferedIOBase):
             preamble = src.read(12)
             assert preamble == i32([0, 1, 0]) or preamble == i32([0, 0, 0])
             self.length = to_i32(src)
             for _ in range(self.length):
-                self.items.append(Field(src))
-                self.items.append(Field(src))
-                assert src.read(4) == bytes(4)
+                self.items.append((Field(src), Field(src), to_i32(src)))
         elif isinstance(src, Sequence):
-            self.length = len(src) // 2
-            for i in src:
-                self.items.append(Field(i))
+            self.length = len(src)
+            for item in src:
+                self.items.append((Field(item[0]), Field(item[1]), item[2]))
         else:
             raise TypeError()
     
     def to_bytes(self):
         items = bytearray()
-        for i in range(0, len(self.items), 2):
-            items += self.items[i].to_bytes() + self.items[i + 1].to_bytes() + bytearray(4)
+        for item in self.items:
+            items += item[0].to_bytes() + item[1].to_bytes() + i32(item[2])
         return (i32([0, 1, 0]) +
                 i32(self.length) +
                 items +

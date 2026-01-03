@@ -12,13 +12,10 @@ class Reader:
         self.padding = 24
 
     def format_head(self, row: list[str]):
-        langs = ["English", "en"]
+        langs = [("English", "en", 0)]
         for s in row[4:]:
             (lang, code) = s.rsplit(" ", 1)
-            lang = lang.rstrip()
-            code = code[1:-1]
-            langs.append(lang)
-            langs.append(code)
+            langs.append((lang.rstrip(), code[1:-1], 0))
         return langs
 
     def __iter__(self):
@@ -37,8 +34,8 @@ class Writer:
     
     def languages(self):
         strings = '"English"'
-        for i in range(2, len(self.data.languages.items), 2):
-            strings += f',"{self.data.languages.items[i]} [{self.data.languages.items[i + 1]}]"'
+        for item in self.data.languages.items[1:]:
+            strings += f',"{item[0]} [{item[1]}]"'
         return f'"Key","Type","Desc",{strings}\n'
     
     def body(self):

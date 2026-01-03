@@ -15,11 +15,8 @@ class Reader:
         self.padding = int(row[0])
         langs = []
         for s in row[1:]:
-            (lang, code) = s.rsplit(" ", 1)
-            lang = lang.rstrip()
-            code = code[1:-1]
-            langs.append(lang)
-            langs.append(code)
+            (lang, code, type) = s.rsplit(" ", 2)
+            langs.append((lang.rstrip(), code[1:-1], int(type)))
         return langs
 
     def __iter__(self):
@@ -39,8 +36,8 @@ class Writer:
     
     def languages(self):
         strings = ""
-        for i in range(0, len(self.data.languages.items), 2):
-            strings += f',"{self.data.languages.items[i]} [{self.data.languages.items[i + 1]}]"'
+        for item in self.data.languages.items:
+            strings += f',"{item[0]} [{item[1]}] {item[2]}"'
         return f'{self.data.body.padding}{strings}\n'
     
     def body(self):
