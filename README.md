@@ -47,10 +47,10 @@ The module should export an iterable `Reader(file_path: str)` class with a `lang
 [key: str, value0: str, value1: str, ..., type: int]
 ```
 
-`languages` should be a list of strings containing a column/language name and code for every alternative:
+`languages` should be a list of tuples containing column/language names and an int for every alternative:
 
 ```py
-[lang0.name: str, lang0.code: str, lang1.name: str, lang1.code: str, ...]
+[(lang0.name: str, lang0.code: str, lang0.type: int), (lang1.name: str, lang1.code: str, lang1.type: int), ...]
 ```
 
 `padding` should be an `int` specifying the number of `\x00` bytes between records of the I2Languages binary representation. 16 is a common default.
@@ -63,8 +63,8 @@ class I2:
     body: Body
     header: Header
 class Languages:
-    length: int # Number of languages, half of len(items)
-    items: list[Field]
+    length: int # Number of languages/columns
+    items: list[tuple[Field, Field, int]]
 class Body:
     padding: int # Between Records
     length: int # Number of records
