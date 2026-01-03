@@ -1,0 +1,79 @@
+name: Build and Release Executables
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Enter the version (e.g., v1.0.0)"
+        required: true
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: pip install pyinstaller
+
+      - name: Build executable
+        run: pyinstaller -n app --onefile --specpath dist pyI2L/__main__.py
+
+      - name: Rename executable
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            mv dist/app dist/pyI2L-Windows.exe
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
+            mv dist/app dist/pyI2L-Linux
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            mv dist/app dist/pyI2L-macOS
+          fi
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pyI2L-${{ matrix.os }}
+          path: dist/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: List downloaded files (Debugging)
+        run: ls -R
+
+      - name: Make files executable (Linux/Mac)
+        run: chmod +x pyI2L-* || true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: ${{ github.event.inputs.version }}
+          draft: true
+          prerelease: false
+          files: |
+            pyI2l-Windows.exe
+            pyI2l-Linux
+            pyI2L-macOS
