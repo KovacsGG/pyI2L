@@ -4,11 +4,11 @@ from pyI2L import parsers
 
 import argparse
 
-argParser = argparse.ArgumentParser( description="Convert between Inter Illusion's\
+argParser = argparse.ArgumentParser(description="Convert between Inter Illusion's\
                                     I2 Localization Unity assets\
-                                    and exported Crowdin CSV files.",
+                                    and exported localization files.",
                                     usage="%(prog)s ASSETS [options]",
-                                    epilog="See also https://github.com/KovacsGG/pyI2L" )
+                                    epilog="See also https://github.com/KovacsGG/pyI2L")
 argParser.add_argument("assets",
                     default="./resources.assets",
                     nargs="?",
@@ -21,11 +21,11 @@ argParser.add_argument("-a", "--apply",
 argParser.add_argument("-o", "--output",
                     help="Name of the output file.")
 argParser.add_argument("-f", "--format",
-                    default="Wavi",
+                    default="rawCSV",
                     help=f"Formatter to read the input \
                             or write the output.\n \
                             Possible values: {parsers.__all__}\n\
-                            \"Wavi\" by default.")
+                            \"rawCSV\" by default.")
 
 # Validation and defaults setting
 args = argParser.parse_args()
