@@ -15,6 +15,7 @@ class Reader:
         self.padding = int(row[0])
         langs = []
         for s in row[1:]:
+            if s == "" or s == "type": break
             (lang, code, type) = s.rsplit(" ", 2)
             langs.append((lang.rstrip(), code[1:-1], int(type)))
         return langs
@@ -38,7 +39,7 @@ class Writer:
         strings = ""
         for item in self.data.languages.items:
             strings += f',"{item[0]} [{item[1]}] {item[2]}"'
-        return f'{self.data.body.padding}{strings}\n'
+        return f'{self.data.body.padding}{strings},"type"\n'
     
     def body(self):
         s = ""
