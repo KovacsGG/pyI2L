@@ -10,7 +10,10 @@ __all__ = ["read_assets", "read_input", "write_assets", "write_output", "parsers
 def read_bundle(file: str):
     with open(file, "rb") as in_f:
         reader = streams.EndianBinaryReader(in_f.read())
-        bundle = files.SerializedFile(reader)
+        try:
+            bundle = files.SerializedFile(reader)
+        except:
+            raise ValueError("Can't parse input as Unity bundle.")
     return bundle
 
 

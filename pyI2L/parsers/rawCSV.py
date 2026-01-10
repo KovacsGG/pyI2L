@@ -29,7 +29,7 @@ class Reader:
         return row
     
     def __del__(self):
-        self.file.close()
+        if hasattr(self, "file"): self.file.close()
     
 class Writer:
     def __init__(self, data: I2):
