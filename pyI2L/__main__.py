@@ -33,7 +33,6 @@ argParser.add_argument("-f", "--format",
 
 # Validation and defaults setting
 args = argParser.parse_args()
-argparse.FileType(args.assets)
 assert args.format in parsers.__all__, "Formatting module not found"
 formatter = parsers.__dict__[args.format]
 if args.output is None:
@@ -42,7 +41,6 @@ if args.output is None:
     else:
         ext = formatter.ext if hasattr(formatter, "ext") else ".out"
         args.output = args.assets + ext
-argparse.FileType(args.output)
 
 # Operation
 try:
@@ -75,7 +73,6 @@ if args.apply is None:
         raise e
 
 else:    
-    argparse.FileType(args.apply)
     try:
         apply = read_input(args.apply, formatter.Reader)
     except OSError as e:
