@@ -1,6 +1,7 @@
 from .UnityPy import streams, files
 from .I2 import I2
 from . import parsers
+from .errors import *
 
 import io
 
@@ -13,7 +14,7 @@ def read_bundle(file: str):
         try:
             bundle = files.SerializedFile(reader)
         except:
-            raise ValueError("Can't parse input as Unity bundle.")
+            raise UnityPyError("Can't parse input as Unity bundle.")
     return bundle
 
 
@@ -23,7 +24,7 @@ def get_i2l_asset(bundle):
             bin = obj.read()
             if bin.name == "I2Languages":
                 return bin
-    raise ValueError("Bundle does not contain I2Languages asset.")
+    raise UnityPyError("Bundle does not contain I2Languages asset.")
                 
 
 def read_assets(file: str):

@@ -1,4 +1,5 @@
 from .utils import i32, to_i32, align
+from .errors import i2assert
 
 from typing import Optional
 from collections.abc import Iterator, Sequence
@@ -18,7 +19,7 @@ class Field:
             self.span = to_i32(src)
             self.v = src.read(self.span).decode("utf-8")
             self.padding = align(self.span)
-            assert src.read(self.padding) == bytes(self.padding)
+            i2assert(src, bytes(self.padding))
         elif isinstance(src, str):
             self.v = src
             self.span = len(self.v.encode("utf-8"))
@@ -56,7 +57,7 @@ class Record:
             self.length = to_i32(src)
             for _ in range(self.length):
                 self.items.append(Field(src))
-            assert to_i32(src) == self.length
+            i2assert(src, i32(self.length))
         elif isinstance(src, Sequence):
             self.id = Field(src[0])
             self.type = src[-1]
@@ -99,7 +100,7 @@ class Header:
         If no source is provided, the known pattern will be used.
         """
         if src is not None:
-            assert src.read(12) == i32([0, 0, 1])
+            i2assert(src, i32([0, 0, 1]))
     
     def to_bytes(self):
         return i32([0, 0, 1])
@@ -127,7 +128,7 @@ class Body:
             for _ in range(self.length):
                 self.items.append(Record(src))
                 if padding:
-                    assert src.read(padding) == bytes(padding)
+                    i2assert(src, bytes(padding))
                 else:
                     padding = 0
                     while to_i32(src) == 0:
@@ -169,8 +170,7 @@ class Languages:
         """
         self.items: list[tuple[Field, Field, int]] = []
         if isinstance(src, BufferedIOBase):
-            preamble = src.read(12)
-            assert preamble == i32([0, 1, 0]) or preamble == i32([0, 0, 0])
+            preamble = i2assert(src, [i32([0, 1, 0]), i32([0, 0, 0])])
             self.length = to_i32(src)
             for _ in range(self.length):
                 self.items.append((Field(src), Field(src), to_i32(src)))
